@@ -59,6 +59,8 @@ class Config:
                 api_key=self.api_key,
                 base_url="https://openrouter.ai/api/v1"
             )
+        else:
+            print("ERROR: OPENROUTER_API_KEY not found in environment.")
 
         # -----------------------------------------------------------------------
         # RAG  settings 
