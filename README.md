@@ -44,13 +44,18 @@ All PDF extraction includes the following features:
 ## Installation
 
 **Requirements:** Python 3.11+, pip
-
+** on MacOS:
 ```bash
 git clone https://github.com/MikeWorden/kestrel.git
 cd kestrel
 pip install -r requirements.txt
 ```
-
+** on Ubuntu Linux: (slight version differences)
+```bash
+git clone https://github.com/MikeWorden/kestrel.git
+cd kestrel
+pip install -r requirements.txt.linux
+```
 **Dependencies:**
 ```
 chromadb
