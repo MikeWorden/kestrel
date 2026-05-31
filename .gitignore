@@ -1,0 +1,27 @@
+# Secrets
+.env
+
+# Data files (too large for GitHub)
+data/*.json
+data/*.pdf
+
+# ChromaDB index (rebuild locally)
+chroma_db/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Mac
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Output
+output/
