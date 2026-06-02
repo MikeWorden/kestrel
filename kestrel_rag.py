@@ -62,11 +62,25 @@ class KestrelEngine:
 
     def _init_chroma(self) -> None:
         """Connect to (or create) the ChromaDB persistent store."""
-        pass
+        
         self.chroma_client = chromadb.PersistentClient(path=self.config.chroma_dir)
-        self.collection = self.chroma_client.get_or_create_collection(name=self.config.collection_name)
+        # self.collection = self.chroma_client.get_or_create_collection(name=self.config.collection_name)
 
-   
+        
+        openai_ef = OpenAIEmbeddingFunction(
+            api_key=self.config.openrouter_api_key,
+            api_base="https://openrouter.ai/api/v1",
+            model_name=self.config.embed_model, # Specify the exact OpenRouter model path
+            dimensions=512
+        )
+        
+        try:
+            self.collection = self.chroma_client.get_collection(name="my_document_collection",
+                                                           embedding_function=openai_ef)
+        except:
+            self.collection = self.chroma_client.create_collection(name="my_document_collection",
+                                                              embedding_function=openai_ef)
+        
     # Private data loading and processing methods
    
 
@@ -110,6 +124,7 @@ class KestrelEngine:
         for doc in self.docs:   
             text = doc["text"]
             source = doc["id"]
+            record_source = doc.get("record_source", "")
             words = text.split()
   
             
@@ -281,6 +296,7 @@ class KestrelEngine:
         return {
             "id":   chunk_id,
             "text": text,
+            "doc_type": "pdf",
             "metadata": {
                 **doc["metadata"],
                 "section": header,
@@ -289,14 +305,7 @@ class KestrelEngine:
         }
 
 
-    def embed(self, texts: list[str]) -> list[list[float]]:
-        """
-        Generate embeddings for a list of text strings.
-        Uses config.embed_model via self.client.
-        Returns a list of embedding vectors.
-        """
-        
-        pass
+   
 
     def index(self) -> None:
         """
@@ -319,7 +328,7 @@ class KestrelEngine:
             print("[index] No new chunks to index.")
             return
 
-        
+        # Added this to provide progress feedback during indexing, especially for large datasets.
         from tqdm import tqdm
         batch_size = 100
 

@@ -34,11 +34,15 @@ COLORS = {
 def _source_type(chunk: dict) -> str:
     """Determine source type for color coding."""
     source = chunk.get("source", "") or chunk.get("metadata", {}).get("source", "")
-    if source.endswith(".pdf"):
+    print(f" Debug: {chunk}")
+    print(f"Debug: Determining source type for chunk with source '{source}' and metadata {chunk.get('metadata', {})}")  
+    if source.startswith("NIST"):
         return "pdf"
-    if chunk.get("metadata", {}).get("in_kev", False):
+    elif source.startswith("CVE") and chunk.get("metadata", {}).get("in_kev", False):
         return "kev"
-    return "nvd"
+    else:
+        return "nvd"
+    
 
 
 def _wrap_text(text: str, width: int = 80, max_lines: int = 10) -> str:

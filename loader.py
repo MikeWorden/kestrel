@@ -19,11 +19,14 @@ class Loader:
         self.nvd_docs = []
         self.pdf_docs = []
         
-        # Matches markdown headers, Title Case section labels, and ALL CAPS headings
+       
         
         
     def load_kev_data(self) -> None:
-        """Load all KEV JSON files from a directory and return ChromaDB-ready documents."""
+        """Load data from CISA Known Exploited Vulnerabilities (KEV) JSON files. 
+        Reads all .json files from config.kev_dir, extracts relevant fields,
+        and stores them as a list of dicts in self.kev_docs. """
+        
         docs = []
         kev_path = Path(self.config.kev_dir)  
 
@@ -41,7 +44,7 @@ class Loader:
                         docs.append({
                             "id":       record.get("cveID", f"unknown-{filepath.stem}"),
                             "text":     text,
-                            "source":   "kev",
+                            "record_source":   "kev",
                             "metadata": {
                                 "vendor":       record.get("vendorProject", ""),
                                 "product":      record.get("product", ""),
@@ -105,12 +108,14 @@ class Loader:
 
     def load_nvd_data(self) -> None:
         """
-        Read all NVD JSON files from config.docs_dir and return a flat
+        Read data from the National Vulnerability Database (NVD) via JSON files.
+        Reads all JSON files from config.docs_dir and return a flat
         list of normalized document dicts ready for embedding and indexing.
 
         Each dict has the shape:
         {
             "id":       str,    # CVE ID — used as ChromaDB document ID
+            "source":   str,    # "nvd" (for metadata) and "kev" (for KEV status)
             "text":     str,    # prose text for embedding
             "metadata": dict    # structured fields for ChromaDB filtering
         }
@@ -151,7 +156,7 @@ class Loader:
                 docs.append({
                     "id":       cve.get("id"),
                     "text":     text,
-                    "source":   "nvd",
+                    "record_source":   "nvd",
                     "metadata": self._extract_metadata(cve),
                 })
         self.nvd_docs = docs        
@@ -361,6 +366,7 @@ class Loader:
         {
             "id":       str,    # "{filename}_p{page_num}"
             "text":     str,    # extracted page text, cleaned
+            "source":   "pdf",  # for metadata filtering
             "metadata": dict    # source, page, title, author, doc_type, in_kev
         }
  
@@ -428,7 +434,7 @@ class Loader:
             pages.append({
                 "id":   f"{filepath.stem}_p{page_num}",
                 "text": text,
-                "source": "pdf",
+                "record_source": "pdf",
                 "metadata": {
                     "source":      filepath.name,
                     "title":       title,

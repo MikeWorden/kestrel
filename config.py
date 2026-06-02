@@ -52,16 +52,20 @@ class Config:
         # -----------------------------------------------------------------------
         load_dotenv(find_dotenv(usecwd=True))
 
-        self.api_key = os.getenv("OPENROUTER_API_KEY")
+        # openrouter key for LLM calls
+        self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
        
-        if self.api_key:
+        # But the embedding function requires an OpenAI key
+        if self.openrouter_api_key:
             self.client = OpenAI(
-                api_key=self.api_key,
+                api_key=self.openrouter_api_key,
                 base_url="https://openrouter.ai/api/v1"
             )
         else:
             print("ERROR: OPENROUTER_API_KEY not found in environment.")
 
+        
+            
         # -----------------------------------------------------------------------
         # RAG  settings 
         # -----------------------------------------------------------------------
@@ -69,7 +73,7 @@ class Config:
         self.__docs_dir = "./openai_kestrel_docs"  # directory containing source documents (e.g., KEV and NVD JSON files)
         self.chroma_dir = "./chroma_db"
         self.collection_name = "openai_kestrel" 
-        self.embed_model = "text-embedding-3-large"
+        self.embed_model = "openai/text-embedding-3-small"
         self.llm_model = "gpt-4o-mini"  
         
         self.chunk_size    = 500
@@ -82,7 +86,7 @@ class Config:
                               'If the answer is not in the context, say so clearly.')
     
 
-        self.embed_model    = "text-embedding-3-large" # this is an openai embedding model
+        self.embed_model    = "text-embedding-3-small" # this is an openai embedding model
         self.llm_model      = "gpt-4o-mini"
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         
