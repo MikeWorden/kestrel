@@ -17,6 +17,8 @@ from typing import Optional
 from loader import Loader
 import re
 import tiktoken
+from tqdm import tqdm
+
 
 import chromadb
 import json
@@ -124,6 +126,8 @@ class KestrelEngine:
         for doc in self.docs:   
             text = doc["text"]
             source = doc["id"]
+            metadata = doc["metadata"]
+            
             record_source = doc.get("record_source", "")
             words = text.split()
   
@@ -133,7 +137,8 @@ class KestrelEngine:
                 chunks.append({
                     "source": source,
                     "chunk_id": f"{source}_0",
-                    "text": text
+                    "text": text,
+                    "metadata": metadata
                 })
                 
                 continue
@@ -148,6 +153,7 @@ class KestrelEngine:
                     "source": source,
                     "chunk_id": f"{source}_{chunk_num}",
                     "text": chunk_text,
+                    "metadata": metadata
                 })
                 start += chunk_size - chunk_overlap
                 end = min(start + chunk_size, len(words))
@@ -305,8 +311,41 @@ class KestrelEngine:
         }
 
 
-   
+    def list_chunks(self, chunks: list[dict], max_lines: int = 10) -> str:
+        """
+        Utility to format a list of chunk dicts for display.
+        Shows source, score, and text preview (first 100 chars).
+        Truncates long lists with an ellipsis.
 
+        Args:
+            chunks: List of chunk dicts from retrieve() or query()["chunks"].
+            max_lines: Max number of lines to display before truncating.
+
+        Returns:
+            str: Formatted string with one line per chunk.
+        """
+        lines = []
+        for c in chunks:
+            source = c.get("source", "unknown")
+            score  = c.get("score", 0)
+            meta   = c.get("metadata", {})
+            print(f"Debug: {meta}")
+            
+    def _sanitize_metadata(self, meta: dict) -> dict:
+        """Flatten any non-scalar values for ChromaDB compatibility."""
+        clean = {}
+        for k, v in meta.items():
+            if isinstance(v, dict):
+                continue                        # drop nested dicts entirely
+            elif isinstance(v, list):
+                clean[k] = ", ".join(str(i) for i in v)
+            elif isinstance(v, (str, int, float, bool)) or v is None:
+                clean[k] = v
+            else:
+                clean[k] = str(v)
+        return clean
+
+    
     def index(self) -> None:
         """
         Embed chunks and upsert into ChromaDB collection.
@@ -329,7 +368,6 @@ class KestrelEngine:
             return
 
         # Added this to provide progress feedback during indexing, especially for large datasets.
-        from tqdm import tqdm
         batch_size = 100
 
         for i in tqdm(range(0, len(new_chunks), batch_size), desc="Indexing chunks"):
@@ -337,18 +375,10 @@ class KestrelEngine:
             self.collection.add(
                 ids=       [chunk_id for chunk_id, _ in batch],
                 documents= [chunk["text"] for _, chunk in batch],
-                metadatas= [{"source": chunk["source"]} for _, chunk in batch],
-            )
-
+                metadatas=[self._sanitize_metadata(chunk.get("metadata", {})) or {"document_source": "unknown"} for _, chunk in batch
+]           )
         
         
-
-    def build_index(self, force_rebuild: bool = False) -> None:
-        """
-        Full pipeline: load → chunk → index.
-        Skips rebuild if collection already has documents unless force_rebuild=True.
-        """
-        pass
 
    
     # Query pipeline
@@ -359,7 +389,7 @@ class KestrelEngine:
         """
         Embed the query and retrieve top-k chunks from ChromaDB.
         Uses config.top_k.
-        Returns a list of dicts: [{"text", "source", "doc_type", "in_kev", "score"}, ...]
+        Returns a list of dicts: [{"text", "source", "doc_type", "score"}, ...]
         """
         if top_k is None:
             top_k = self.config.top_k
@@ -383,7 +413,6 @@ class KestrelEngine:
                 "text":     doc,
                 "source":   meta.get("source", "unknown"),
                 "doc_type": meta.get("doc_type", "nvd"),   # "kev", "nvd", or "pdf"
-                "in_kev":   meta.get("in_kev", False),
                 "score":    score,
                 "distance": round(dist, 4),                 # raw distance for debugging
                 "metadata": meta,                           # full metadata for visualize.py
@@ -493,7 +522,7 @@ class KestrelEngine:
             print(f"  [1/3] ChromaDB OK — {count} documents indexed")
 
             # Step 2 — Retrieval
-            test_query = "Show me vulnerabilities in Log4j."  
+            test_query = "Show me chunks where document_source = 'unknown'."  
             chunks     = self.retrieve(test_query, top_k=3)
             if not chunks:
                 print("Validation failed: retrieve() returned no chunks")
@@ -559,6 +588,8 @@ def main():
         kestrel.chunk()
         print(f"Chunking complete! Generated {len(kestrel.chunks)} chunks ready for embedding and indexing.")
         kestrel.index()
+        # kestrel.list_chunks(kestrel.chunks[:5])  # print the first 5 chunks for verification
+        
         print("Indexing complete!")
         kestrel.validate_connection()
         

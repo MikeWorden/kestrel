@@ -44,13 +44,12 @@ class Loader:
                         docs.append({
                             "id":       record.get("cveID", f"unknown-{filepath.stem}"),
                             "text":     text,
-                            "record_source":   "kev",
+                            "document_source": record.get("document_source", "kev"),
                             "metadata": {
                                 "vendor":       record.get("vendorProject", ""),
                                 "product":      record.get("product", ""),
                                 "date_added":   record.get("dateAdded", ""),
                                 "ransomware":   record.get("knownRansomwareCampaignUse", "Unknown"),
-                                "in_kev":       True,
                                 "metadata": self._extract_kev_metadata(record),
                             }
                         })
@@ -84,7 +83,7 @@ class Loader:
             parts.append(f"Date Added: {record['dateAdded']}")
         if record.get("dueDate"):
             parts.append(f"Remediation Due: {record['dueDate']}")
-        parts.append("\nCISA KEV: This is a Known Exploited Vulnerability (KEV).")
+        parts.append("document_source: KEV")
 
         return "\n".join(parts)
 
@@ -101,8 +100,8 @@ class Loader:
             "ransomware":   record.get("knownRansomwareCampaignUse", "Unknown"),
             "cwes":         ", ".join(record.get("cwes", [])),   # e.g. "CWE-79, CWE-89"
             "has_notes":    bool(record.get("notes", "")),       # True/False — don't store full notes text
-            "in_kev":       True,
-        }
+            "document_source": record.get("document_source", "kev"),
+            }
    
 
 
@@ -253,6 +252,8 @@ class Loader:
         parts.append(f"Published: {record.get('published', '')}")
         parts.append(f"Last Modified: {record.get('lastModified', '')}")
 
+        # --- Document source for filtering (e.g. "nvd" vs "kev") ---
+        parts.append(f"document_source: {record.get('document_source', 'nvd')}")
         return "\n".join(parts)
 
     def _extract_metadata(self, record: dict) -> dict:
@@ -304,8 +305,8 @@ class Loader:
             "published":     record.get("published", ""),
             "last_modified": record.get("lastModified", ""),
             "weaknesses":    ", ".join(weaknesses),
-            "in_kev":        bool(record.get("cisaExploitAdd")),
             "cisa_due":      record.get("cisaActionDue", ""),
+            "document_source": record.get("document_source", "nvd"),
         }
     
     
@@ -328,7 +329,6 @@ class Loader:
                 )
                 combined_meta = {
                     **nvd["metadata"],
-                    "in_kev":      True,
                     "kev_due":     kev["metadata"].get("due_date", ""),
                     "ransomware":  kev["metadata"].get("ransomware", "Unknown"),
                 }
@@ -367,7 +367,7 @@ class Loader:
             "id":       str,    # "{filename}_p{page_num}"
             "text":     str,    # extracted page text, cleaned
             "source":   "pdf",  # for metadata filtering
-            "metadata": dict    # source, page, title, author, doc_type, in_kev
+            "metadata": dict    # source, page, title, author, doc_type, etc.
         }
  
         Returns:
@@ -434,7 +434,7 @@ class Loader:
             pages.append({
                 "id":   f"{filepath.stem}_p{page_num}",
                 "text": text,
-                "record_source": "pdf",
+                "document_source": "pdf",
                 "metadata": {
                     "source":      filepath.name,
                     "title":       title,
@@ -442,8 +442,7 @@ class Loader:
                     "subject":     subject,
                     "page":        page_num,
                     "total_pages": total_pages,
-                    "in_kev":      False,   # PDFs are not KEV entries
-                    "doc_type":    "pdf",
+                    "document_source":    "pdf",
                 }
             })
  
@@ -477,7 +476,24 @@ class Loader:
         return text
  
     
-    
+def list_chunks(self, chunks: list[dict], max_lines: int = 10) -> str:
+        """
+        Utility to format a list of chunk dicts for display.
+        Shows source, score, and text preview (first 100 chars).
+        Truncates long lists with an ellipsis.
+
+        Args:
+            chunks: List of chunk dicts from retrieve() or query()["chunks"].
+            max_lines: Max number of lines to display before truncating.
+
+        Returns:
+            str: Formatted string with one line per chunk.
+        """
+        lines = []
+        for c in chunks:
+            source = c.get("source", "unknown")
+            score  = c.get("score", 0)
+            print(f"Debug: {c}")
     
 def main():
     config = Config()
@@ -510,7 +526,10 @@ def main():
             print(f"Loaded {len(loader.pdf_docs)} PDF page documents.")
 
         print(f"Total documents loaded: {len(docs)}")
-        
+        for i, doc in enumerate(docs[:5], start=1):
+            print(f"\n*************Document {i}*************")
+            print(f"ID: {doc['metadata']}") 
+            
 
 
 if __name__ == "__main__":

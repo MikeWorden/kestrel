@@ -33,12 +33,10 @@ COLORS = {
 
 def _source_type(chunk: dict) -> str:
     """Determine source type for color coding."""
-    source = chunk.get("source", "") or chunk.get("metadata", {}).get("source", "")
-    print(f" Debug: {chunk}")
-    print(f"Debug: Determining source type for chunk with source '{source}' and metadata {chunk.get('metadata', {})}")  
-    if source.startswith("NIST"):
+    source = chunk.get("document_source", "") or chunk.get("metadata", {}).get("document_source", "")
+    if source.startswith("pdf"):
         return "pdf"
-    elif source.startswith("CVE") and chunk.get("metadata", {}).get("in_kev", False):
+    elif source.startswith("kev"):
         return "kev"
     else:
         return "nvd"
@@ -136,9 +134,6 @@ def plot_retrieval_distances(
             or chunk.get("metadata", {}).get("source", "unknown")
         )
 
-        # KEV flag
-        in_kev   = chunk.get("metadata", {}).get("in_kev", False)
-        kev_line = "<b>⚑ CISA KEV</b><br>" if in_kev else ""
 
         # Chunk text preview
         text_preview = _wrap_text(chunk.get("text", ""), width=80, max_lines=12)
@@ -148,7 +143,6 @@ def plot_retrieval_distances(
             f"source: {source}<br>"
             f"type: {stype.upper()}<br>"
             f"score: {score:.3f}<br>"
-            f"{kev_line}"
             f"<br>"
             f"<span style='color:#888'>— chunk preview —</span><br>"
             f"<span style='font-family:monospace;font-size:11px'>{text_preview}</span>"
