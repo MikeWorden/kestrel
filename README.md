@@ -4,6 +4,9 @@ Kestrel is a local Retrieval-Augmented Generation (RAG) system for querying cybe
 
 The symbology of Kestrel reflects my interest in cybersecurity.   The Kestrel is a bird of prey, used to symbolize several relevant cybersecurity and national security missions.    This symbology reflects the importance of  improved tools to guide and manage patching and patch management to the cybersecurity industry.   
 
+The goal of Kestrel is to improve the analysis and scoring of vulnerabilities in an environment.   This tool merges governance guidance with vulnerability data to provide answers on severity, known exploits, and remediation/mitigation activities.
+
+
 ---
 Project Team:  Mike Worden
 ---
@@ -117,6 +120,8 @@ On startup, Kestrel will:
 3. Launch the Gradio interface and open a browser tab
 
 **Example queries:**
+- `Please describe how the DoD rates vulnerabilities based on the CVSS rating`
+- `List 10 Chrome vulnerabilities against the CVSS rating ranges`
 - `What Apache vulnerabilities are in the KEV catalog?`
 - `Show me critical CVEs with known ransomware use`
 - `How should I prioritize patching`

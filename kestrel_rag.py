@@ -7,9 +7,9 @@ Pipeline:
     3. embed()              - Generate embeddings via OpenAI
     4. index()              - Store chunks + embeddings in ChromaDB
     5. retrieve()           - Query ChromaDB for top-k relevant chunks
-    6. generate_prompt()   - Build prompt and call LLM with context
-    7. query()              - End-to-end: retrieve + generate
-"""
+    6. generate_prompt()    - Build prompt with retrieved chunks + user query
+    7. query()              - Call LLM with prompt and return answer + sources
+    8. validate_connection() - End-to-end test of the full RAG pipeline
 
 import logging
 from pathlib import Path
@@ -27,9 +27,8 @@ from openai import OpenAI
 import gradio as gr
 
 from config import Config
-# import load_json    
 
-logger = logging.getLogger(__name__)
+
 
 
 class KestrelEngine:
@@ -548,28 +547,6 @@ class KestrelEngine:
 
 
 
-
-def build_ui(kr: KestrelEngine) -> gr.ChatInterface:
-    """
-    Construct and return the Gradio ChatInterface.
- 
-    Chat function flow per turn:
-        user query → retrieve chunks → build prompt → generate → display
-    """
-    top_k = kr.config.top_k
-    # 'history' is unused in this single-turn demo, but Gradio requires it as a parameter. 
-    def chat(user_message: str, history: list[dict]) -> str: #  runs every time the user sends a message in the Gradio UI.
-        chunks  = kr.retrieve( user_message, top_k) # retrieve relevant chunks from ChromaDB based on user query
-        answer  = kr.query(user_message, chunks)["answer"] # get the answer from the RAG pipeline
-        sources = sorted({c["source"] for c in chunks})
-        return f"{answer}\n\n*Sources: {', '.join(sources)}*"
- 
-    return gr.ChatInterface(
-        fn=chat, # call the chat function whenever the user submits a message
-        title="Naive RAG Demo — OpenAI Terms of Service",
-        chatbot=gr.Chatbot(height=460), #  creates the chat display area and sets its height to 460 pixels
-    )
-
         
 def main():
     config = Config()
@@ -577,20 +554,21 @@ def main():
         print("Error: OpenAI client not initialized. Please set OPENROUTER_API_KEY in your environment.")
         return
     else:
+        # Intialization 
         print("OpenAI client initialized successfully!")
         kestrel = KestrelEngine(config)
         print("KestrelEngine initialized successfully!")
-        # Load data and build index
+        # Load data and chunk 
         kestrel.load()
         print(f"Loaded {len(kestrel.docs)} documents from disk.")
         # print("Loading data and building index...")
         print(f"Chunking documents into pieces of ~{config.chunk_size} words with {config.chunk_overlap} words overlap...")
         kestrel.chunk()
         print(f"Chunking complete! Generated {len(kestrel.chunks)} chunks ready for embedding and indexing.")
+        # Build Index
         kestrel.index()
-        # kestrel.list_chunks(kestrel.chunks[:5])  # print the first 5 chunks for verification
-        
         print("Indexing complete!")
+        # Validate end-to-end pipeline with a test query        
         kestrel.validate_connection()
         
 if __name__ == "__main__":

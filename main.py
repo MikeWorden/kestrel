@@ -14,7 +14,6 @@ from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from config import Config
 from kestrel_rag import KestrelEngine
-#import load_json
 import gradio as gr
 
 

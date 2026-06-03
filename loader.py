@@ -1,6 +1,5 @@
 from asyncio.log import logger
 import json
-import logging
 from pathlib import Path
 
 import re
@@ -406,7 +405,7 @@ class Loader:
         try:
             reader = PdfReader(str(filepath))
         except Exception as e:
-            logger.error(f"Could not open {filepath.name}: {e}")
+            print(f"Could not open {filepath.name}: {e}")
             return []
  
         # Pull PDF document metadata for enrichment
@@ -421,14 +420,14 @@ class Loader:
             try:
                 raw_text = page.extract_text() or ""
             except Exception as e:
-                logger.warning(
+                print(
                     f"Could not extract text from {filepath.name} p{page_num}: {e}"
                 )
                 continue
  
             text = self._clean_text(raw_text)
             if not text:
-                logger.debug(f"Skipping blank page: {filepath.name} p{page_num}")
+                print(f"Skipping blank page: {filepath.name} p{page_num}")
                 continue
  
             pages.append({
@@ -446,7 +445,7 @@ class Loader:
                 }
             })
  
-        logger.debug(f"Extracted {len(pages)} pages from {filepath.name}")
+        print(f"Extracted {len(pages)} pages from {filepath.name}")
         return pages
  
     def _clean_text(self, text: str) -> str:

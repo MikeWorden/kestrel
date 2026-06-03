@@ -16,8 +16,13 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Mac
+# Mac/OSX
 .DS_Store
+.DS_Store?
+data/.DS_Store
+.Spotlight-V100
+.Trashes
+
 
 # Logs
 logs/
