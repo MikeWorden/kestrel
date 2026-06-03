@@ -135,7 +135,7 @@ On startup, Kestrel will:
 ## Limitations
 
 - **No cross-session memory** — conversation history is maintained within a browser session only; it is not persisted across restarts
-- **Static index** — the index is built once at startup; live CVE feeds require a manual rebuild via `build_index(force_rebuild=True)`
+- **Static index** — the index is built once at startup; 
 - **Embedding model dependency** — query and document embeddings must use the same model; changing `embed_model` requires a full index rebuild
 - **OpenRouter dependency** — LLM generation requires a valid OpenRouter API key and an active internet connection; retrieval operates fully locally
 
