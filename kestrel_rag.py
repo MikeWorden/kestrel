@@ -11,6 +11,7 @@ Pipeline:
     7. query()              - Call LLM with prompt and return answer + sources
     8. validate_connection() - End-to-end test of the full RAG pipeline
 
+"""
 import logging
 from pathlib import Path
 from typing import Optional
@@ -28,7 +29,7 @@ import gradio as gr
 
 from config import Config
 
-"""
+
 
 
 class KestrelEngine:
